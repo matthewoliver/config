@@ -16,6 +16,20 @@ window.zuul_enable_status_updates = true;
 window.zuul_filter = [];
 window.zuul_collapsed_exceptions = [];
 
+function format_enqueue_time(time) {
+    var hours = 60 * 60 * 1000;
+    var now = Date.now();
+    var delta = now - time;
+    var status = "queue_good";
+    var text = format_time(delta, true);
+    if (delta > (4 * hours)) {
+        status = "queue_bad";
+    } else if (delta > (2 * hours)) {
+        status = "queue_warn";
+    }
+    return '<span class="' + status + '">' + text + '</span>';
+}
+
 function format_time(ms, words) {
     if (ms == null) {
         return "unknown";
@@ -138,8 +152,8 @@ function get_sparkline_url(pipeline_name) {
             hideAxes: true,
             hideGrid: true,
             target: [
-                "color(stats.gauges.zuul.pipeline."+pipeline_name+".current_changes, '6b8182')",
-            ],
+                "color(stats.gauges.zuul.pipeline."+pipeline_name+".current_changes, '6b8182')"
+            ]
         });
     }
     return window.zuul_sparkline_urls[pipeline_name];
@@ -183,11 +197,11 @@ function format_pipeline(data) {
                 }
                 html += name + '</a></div>';
             }
-            html += '<table>'
+            html += '<table>';
             $.each(head, function(change_i, change) {
                 html += format_change(change, change_queue);
             });
-            html += '</table></div>'
+            html += '</table></div>';
         });
     });
 
@@ -213,8 +227,12 @@ function format_change(change, change_queue) {
         html += '<td class="'+cls+'">';
         if (i == change['_tree_index']) {
             if (change['failing_reasons'] && change['failing_reasons'].length > 0) {
-                html += '<img src="red.png" title="Failing because '+
-                    change['failing_reasons'].join(', ')+'"/>';
+                var reason = change['failing_reasons'].join(', ');
+                var image = 'red.png';
+                if (reason.match(/merge conflict/)) {
+                    image = 'black.png';
+                }
+                html += '<img src="' + image + '" title="Failing because ' + reason +'"/>';
             } else {
                 html += '<img src="green.png" title="Succeeding"/>';
             }
@@ -235,21 +253,6 @@ function format_change(change, change_queue) {
             'onmouseout="$(this).removeClass(\'hover\')">';
 
     html += '<span class="project">' + change['project'] + '</span>';
-    var id = change['id'];
-    var url = change['url'];
-    if (id !== null) {
-        if (id.length == 40) {
-            id = id.substr(0,7);
-        }
-        html += '<span class="changeid">';
-        if (url !== null) {
-            html += '<a href="'+url+'">';
-        }
-        html += id;
-        if (url !== null) {
-            html += '</a>';
-        }
-    }
 
     display = $('#expandByDefault').is(':checked');
     safe_change_id = safe_id(change['id']);
@@ -259,11 +262,39 @@ function format_change(change, change_queue) {
         display = !display;
     }
 
-    html += '</span><span class="time">';
+    html += '<span class="time">';
     html += format_time(change['remaining_time'], true);
-    html += '</span></div><div class="jobs"';
+    html += '</span><br/>';
+
+    // Row #2 of the header (change id and enqueue time)
+    html += '<span class="changeid"> ';
+    var id = change['id'];
+    var url = change['url'];
+    if (id !== null) {
+        if (id.length == 40) {
+            id = id.substr(0,7);
+        }
+        if (url !== null) {
+            html += '<a href="'+url+'">';
+        }
+        html += id;
+        if (url !== null) {
+            html += '</a>';
+        }
+    } else {
+        // if there is not changeset we still need forced content, otherwise
+        // the layout doesn't work
+        html += '&nbsp;';
+    }
+    html += '</span>';
+    html += '<span class="time">' + format_enqueue_time(change['enqueue_time']) + '</span>';
+
+    html += '</div>';
+
+    // Job listing from here down
+    html += '<div class="jobs"';
     if (display == false) {
-        html += ' style="display: none;"'
+        html += ' style="display: none;"';
     }
     html += '>';
 
@@ -487,7 +518,7 @@ $(function() {
             } else {
                 val.show(100);
             }
-        })
+        });
     }).live('keyup', function () {
         $('a.save-filter')
             .removeClass('hidden')

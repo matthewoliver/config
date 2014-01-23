@@ -35,12 +35,27 @@ mkdir -p ~/tripleo
 export TRIPLEO_ROOT=~/tripleo
 
 cd ~/tripleo
-git clone https://review.openstack.org/p/openstack-infra/tripleo-ci
-git clone https://review.openstack.org/p/openstack/tripleo-incubator
-bash tripleo-incubator/scripts/pull-tools
+# XXX: Note that this is redundant with the cached copies in /opt/git.
+# see https://bugs.launchpad.net/openstack-ci/+bug/1269889
+bash /opt/git/openstack/tripleo-incubator/scripts/pull-tools
 # Instead of running pull-tools, we'll eventually want to get the
 # refresh-env script working:
 # source tripleo-incubator/scripts/refresh-env ~/tripleo
+
+# tripleo-gate runs with two networks - the public access network and eth1
+# pointing at the in-datacentre L2 network where we can talk to the test
+# environments directly. We need to enable DHCP on eth1 though.
+sudo dd of=/etc/network/interfaces oflag=append conv=notrunc << EOF
+auto eth1
+iface eth1 inet dhcp
+EOF
+# Note that we don't bring it up during prepare - it's only needed to run
+# tests.
+
+# Workaround bug 1270646 for actual slaves
+sudo dd of=/etc/network/interfaces.d/eth0.cfg oflag=append conv=notrunc << EOF
+    post-up ip link set mtu 1458 dev eth0
+EOF
 
 # We'll want something like this for triplo when we do dependencies
 #

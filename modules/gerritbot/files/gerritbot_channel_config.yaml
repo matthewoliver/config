@@ -38,6 +38,7 @@ openstack-infra:
       - openstack-infra/reviewstats
       - openstack-infra/statusbot
       - openstack-infra/storyboard
+      - openstack-infra/storyboard-webclient
       - openstack-infra/zuul
       - openstack-infra/zuul-packaging
       - openstack/requirements
@@ -258,6 +259,7 @@ openstack-mistral:
       - x-vrif-minus-2
     projects:
       - stackforge/mistral
+      - stackforge/mistral-extra
       - stackforge/python-mistralclient
     branches:
       - master
@@ -439,6 +441,7 @@ storyboard:
       - x-vrif-minus-2
     projects:
       - openstack-infra/storyboard
+      - openstack-infra/storyboard-webclient
     branches:
       - master
 

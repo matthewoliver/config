@@ -42,6 +42,8 @@ pipelines:
     failure:
       gerrit:
         verified: -2
+    window-floor: 10
+    window-increase-factor: 2
 
   - name: post
     description: This pipeline runs jobs that operate after each change is merged.
@@ -177,6 +179,18 @@ project-templates:
       - 'periodic-{name}-python26-havana'
       - 'periodic-{name}-python27-havana'
 
+  - name: openstack-doc-gate
+    check:
+      - gate-{name}-tox-checkniceness
+      - gate-{name}-tox-checksyntax
+      - gate-{name}-tox-checkdeletions
+      - gate-{name}-tox-checkbuild
+    gate:
+      - gate-{name}-tox-checkniceness
+      - gate-{name}-tox-checksyntax
+      - gate-{name}-tox-checkdeletions
+      - gate-{name}-tox-checkbuild
+
 
 jobs:
   - name: ^.*$
@@ -217,6 +231,8 @@ jobs:
     voting: false
   - name: gate-tempest-dsvm-neutron-heat-slow
     branch: ^(?!stable/grizzly).*$
+    voting: false
+  - name: gate-tripleo-deploy
     voting: false
   - name: ^(gate|check)-devstack-dsvm-cells$
     voting: false
@@ -342,6 +358,8 @@ jobs:
     branch: ^(?!stable/grizzly).*$
   - name: gate-operations-guide-tox-checkniceness
     voting: false
+  - name: gate-api-site-tox-checkniceness
+    voting: false
 # Deprecated documentation targets:
   - name: openstack-block-storage-admin-old
     branch: stable/grizzly
@@ -412,6 +430,8 @@ jobs:
   - name: gate-python-tuskarclient-python33
     voting: false
   - name: gate-mistral-python33
+    voting: false
+  - name: gate-mistral-extra-python33
     voting: false
   - name: gate-python-mistralclient-python33
     voting: false
@@ -761,10 +781,10 @@ projects:
       - gate-tempest-dsvm-neutron-large-ops
       - gate-grenade-dsvm-neutron
     experimental:
-      - gate-tempest-dsvm-neutron-full
       - check-tempest-dsvm-neutron-isolated-parallel
       - gate-grenade-dsvm-neutron-forward
       - neutron-upstream-translation-update
+      - check-neutron-dsvm-functional
     pre-release:
       - neutron-tarball
     release:
@@ -1588,13 +1608,13 @@ projects:
       - gate-tempest-dsvm-neutron-large-ops
       - gate-grenade-dsvm
     pre-release:
-      - oslo.messaging-tarball
-    release:
       - oslo.messaging-tarball:
         - oslo.messaging-pypi-upload:
           - post-mirror-python26
           - post-mirror-python27
           - post-mirror-python33
+    release:
+      - oslo.messaging-tarball
 
 #TODO: add docs
   - name: openstack/oslo.rootwrap
@@ -1989,10 +2009,8 @@ projects:
 # Section: OpenStack documentation projects
 
   - name: openstack/api-site
-    check:
-      - gate-noop
-    gate:
-      - gate-noop
+    template:
+      - name: openstack-doc-gate
     post:
       - openstack-api-quick-start
       - openstack-api-site
@@ -2603,6 +2621,16 @@ projects:
           - post-mirror-python27
           - post-mirror-python33
 
+  - name: openstack-infra/storyboard-webclient
+    check:
+      - gate-storyboard-webclient-unittests
+    gate:
+      - gate-storyboard-webclient-unittests
+    post:
+      - storyboard-webclient-release-branch
+    release:
+      - storyboard-webclient-release-master
+
   - name: openstack-infra/tripleo-ci
     check:
       - gate-noop
@@ -3112,6 +3140,29 @@ projects:
     release:
       - mistral-tarball:
         - mistral-pypi-upload:
+          - post-mirror-python26
+          - post-mirror-python27
+          - post-mirror-python33
+
+  - name: stackforge/mistral-extra
+    check:
+      - gate-mistral-extra-pep8
+      - gate-mistral-extra-python26
+      - gate-mistral-extra-python27
+      - gate-mistral-extra-python33
+      - gate-mistral-extra-docs
+    gate:
+      - gate-mistral-extra-pep8
+      - gate-mistral-extra-python26
+      - gate-mistral-extra-python27
+      - gate-mistral-extra-docs
+    post:
+      - mistral-extra-branch-tarball
+    pre-release:
+      - mistral-extra-tarball
+    release:
+      - mistral-extra-tarball:
+        - mistral-extra-pypi-upload:
           - post-mirror-python26
           - post-mirror-python27
           - post-mirror-python33
@@ -3711,6 +3762,12 @@ projects:
       - gate-python-barbicanclient-python27
     post:
       - python-barbicanclient-branch-tarball
+    release:
+      - python-barbicanclient-tarball:
+        - python-barbicanclient-pypi-upload:
+          - post-mirror-python26
+          - post-mirror-python27
+          - post-mirror-python33
 
   - name: stackforge/python-climateclient
     check:
@@ -3799,8 +3856,18 @@ projects:
   - name: stackforge/python-rallyclient
     check:
       - gate-python-rallyclient-requirements
+      - gate-python-rallyclient-pep8
+      - gate-python-rallyclient-python26
+      - gate-python-rallyclient-python27
+      - gate-python-rallyclient-docs
     gate:
       - gate-python-rallyclient-requirements
+      - gate-python-rallyclient-pep8
+      - gate-python-rallyclient-python26
+      - gate-python-rallyclient-python27
+      - gate-python-rallyclient-docs
+    post:
+      - python-rallyclient-coverage
 
   - name: stackforge/python-solumclient
     check:
@@ -3999,7 +4066,10 @@ projects:
       - taskflow-tarball
     release:
       - taskflow-tarball:
-        - taskflow-pypi-upload
+        - taskflow-pypi-upload:
+          - post-mirror-python26
+          - post-mirror-python27
+          - post-mirror-python33
 
   - name: stackforge/tomograph
     check:
