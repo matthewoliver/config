@@ -226,7 +226,9 @@ function format_change(change, change_queue) {
         }
         html += '<td class="'+cls+'">';
         if (i == change['_tree_index']) {
-            if (change['failing_reasons'] && change['failing_reasons'].length > 0) {
+            if (change['active'] != true) {
+                html += '<img src="grey.png" title="Waiting until closer to head of queue to start jobs"/>';
+            } else if (change['failing_reasons'] && change['failing_reasons'].length > 0) {
                 var reason = change['failing_reasons'].join(', ');
                 var image = 'red.png';
                 if (reason.match(/merge conflict/)) {
@@ -413,10 +415,22 @@ function clean_changes_lists() {
     window.zuul_collapsed_exceptions = new_collapsed_exceptions;
 }
 
+function update_zuul_info(data) {
+    if ('zuul_version' in data) {
+        $('#zuul-version').text(data['zuul_version']);
+    }
+    if ('last_reconfigured' in data) {
+        var last_reconfigured = new Date(data['last_reconfigured']);
+        $('#last-reconfigured-span').text(last_reconfigured.toString());
+    }
+}
+
 function update() {
     var html = '';
 
     $.getJSON('http://zuul.openstack.org/status.json', function(data) {
+        update_zuul_info(data);
+
         if ('message' in data) {
             $("#message").attr('class', 'alertbox');
             $("#message").html(data['message']);
@@ -438,7 +452,6 @@ function update() {
             data['trigger_event_queue']['length']);
         $("#result_event_queue_length").html(
             data['result_event_queue']['length']);
-
     });
 
     clean_changes_lists();
