@@ -5,6 +5,7 @@ class openstack_project::turbo_hipster (
   $th_repo_destination = '/home/th/turbo-hipster',
   $th_dataset_path = "/var/lib/turbo-hipster/",
   $th_local_dataset_path = "/etc/ansible/roles/turbo-hipster/datasets/",
+  $th_user = "th",
   $th_test_user = "nova",
   $th_test_pass = "tester",
   $th_test_host = "%",
@@ -16,11 +17,12 @@ class openstack_project::turbo_hipster (
     "nova_datasets_user_001",
     "nova_dataset_user_002",   
   ],
-  $zuul_server = "",
+  $zuul_server = "1.2.3.4",
   $zuul_port = 1234,
   $database_engine_package = "mysql-server",
-  $database_engine_package = "mysql",
+  $database_engine = "mysql",
   $mysql_root_password = "master",
+  $pypi_mirror = "http://pypi.python.org"
 ) {
   include openstack_project
 
@@ -30,17 +32,20 @@ class openstack_project::turbo_hipster (
   }
 
   class { '::turbo_hipster':
-    $th_repo = 'https://git.openstack.org/stackforge/turbo-hipster',
-    $th_repo_destination = '/home/turbo-hipster/turbo-hipster',
-    $th_dataset_path = "/var/lib/turbo-hipster/",
-    $th_local_dataset_path = "/etc/ansible/roles/turbo-hipster/datasets/",
-    $th_user = "turbo-hipster",
-    $th_lxc_dir = "/var/lib/lxc",
-    $th_test_user = "nova",
-    $th_test_pass = "tester",
-    $th_test_host = "%",
-    $zuul_server = "",
-    $zuul_port = 1234,
-    $database_engine = "mysql"
+    th_repo => $th_repo,
+    th_repo_destination => $th_repo_destination,
+    th_dataset_path => $th_dataset_path,
+    th_local_dataset_path => "/etc/ansible/roles/turbo-hipster/datasets/",
+    th_user => $th_user,
+    th_test_user => $th_test_user,
+    th_test_pass => $th_test_pass,
+    th_test_host => $th_test_host,
+    th_databases => $th_databases,
+    zuul_server => $zuul_server,
+    zuul_port => $zuul_port,
+    database_engine => $database_engine,
+    database_engine_package => $database_engine_package,
+    mysql_root_password => $mysql_root_password,
+    pypi_mirror => $pypi_mirror
   }
 }
