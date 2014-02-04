@@ -22,4 +22,9 @@ sudo /sbin/iptables -A INPUT -p tcp --dport 3306 ! -d 172.16.0.1 -j DROP
 # <todo> rsync -pa $dataset_username@$dataset_source $dataset_dest 
 
 # start up turbo-hipster. 
-
+if [ $(ps -eaf |grep -ci [t]urbo-hipster) -gt 0 ]
+then
+  /etc/init.d/turbo-hipster restart
+else
+  /etc/init.d/turbo-hipster start
+fi
