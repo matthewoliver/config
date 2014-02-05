@@ -37,15 +37,20 @@ class openstack_project::turbo_hipster (
     th_dataset_path => $th_dataset_path,
     th_local_dataset_path => "/etc/ansible/roles/turbo-hipster/datasets/",
     th_user => $th_user,
+    zuul_server => $zuul_server,
+    zuul_port => $zuul_port,
+    database_engine => $database_engine,
+    pypi_mirror => $pypi_mirror
+  }
+
+  class { '::turbo_hipster::db_migration':
+    th_dataset_path => $th_dataset_path,
     th_test_user => $th_test_user,
     th_test_pass => $th_test_pass,
     th_test_host => $th_test_host,
     th_databases => $th_databases,
-    zuul_server => $zuul_server,
-    zuul_port => $zuul_port,
     database_engine => $database_engine,
     database_engine_package => $database_engine_package,
     mysql_root_password => $mysql_root_password,
-    pypi_mirror => $pypi_mirror
   }
 }
