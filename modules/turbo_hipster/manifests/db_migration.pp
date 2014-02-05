@@ -26,7 +26,7 @@ class turbo_hipster::db_migration (
         location   => 'http://repo.percona.com/apt',
         repos      => 'main',
         key => '1C4CBDCDCD2EFD2A',
-        key_server => 'http://keys.gnupg.net',
+        key_server => 'keys.gnupg.net',
       }
     }
     elsif $database_engine == 'mariadb' {
@@ -38,9 +38,7 @@ class turbo_hipster::db_migration (
       }
     }
   }
-  database_engine_repo { 'database_repo':
-    require => Class['apt']
-  }
+  database_engine_repo { 'database_repo': }
 
   class { 'mysql::server':
     package_name => $database_engine_package,
@@ -49,14 +47,14 @@ class turbo_hipster::db_migration (
       'default_engine' => 'InnoDB',
       'bind_address'   => $database_engine_bind,
       'port'           => $database_engine_port,
-    }
-    require      => Database_engine_repo['database_repo']
+    },
+    require  => Database_engine_repo['database_repo']
   }
 
   include mysql::python
 
 # first create the TH Test database user. 
-  database_user { "${th_test_user@${th_test_host}":
+  database_user { "${th_test_user}@${th_test_host}":
     ensure        => $ensure,
     password_hash => mysql_password($th_test_pass),
     provider      => 'mysql',
@@ -73,15 +71,15 @@ class turbo_hipster::db_migration (
     }
     
     if $ensure == 'present' {
-      database_grant { "${th_test_user@${th_test_host}/${title}":
+      database_grant { "${th_test_user}@${th_test_host}/${title}":
         privileges => $grant,
         provider   => 'mysql',
-        require    => Database_user["${th_test_user@${th_test_host}"],
+        require    => Database_user["${th_test_user}@${th_test_host}"],
       }
     }
   }
   th_database { $th_databases: 
-    require =>  Database_user["${th_test_user@${th_test_host}"]
+    require =>  Database_user["${th_test_user}@${th_test_host}"]
   }
 
 
