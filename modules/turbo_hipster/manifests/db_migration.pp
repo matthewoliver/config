@@ -25,7 +25,7 @@ class turbo_hipster::db_migration (
       apt::source { 'percona':
         location   => 'http://repo.percona.com/apt',
         repos      => 'main',
-        key => '1C4CBDCDCD2EFD2A',
+        key        => '1C4CBDCDCD2EFD2A',
         key_server => 'keys.gnupg.net',
       }
     }
@@ -33,7 +33,7 @@ class turbo_hipster::db_migration (
       apt::source { 'mariadb':
         location   => "http://mirror.aarnet.edu.au/pub/MariaDB/repo/${mariadb_version}/ubuntu",
         repos      => 'main',
-        key => 'cbcb082a1bb943db',
+        key        => 'cbcb082a1bb943db',
         key_server => 'hkp://keyserver.ubuntu.com:80',
       }
     }
@@ -42,7 +42,7 @@ class turbo_hipster::db_migration (
 
   class { 'mysql::server':
     package_name => $database_engine_package,
-    config_hash => {
+    config_hash  => {
       'root_password'  => $mysql_root_password,
       'default_engine' => 'InnoDB',
       'bind_address'   => $database_engine_bind,
@@ -81,8 +81,5 @@ class turbo_hipster::db_migration (
   th_database { $th_databases: 
     require =>  Database_user["${th_test_user}@${th_test_host}"]
   }
-
-
-  
 
 }

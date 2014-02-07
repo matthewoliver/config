@@ -65,7 +65,7 @@ class turbo_hipster (
     path        => '/usr/local/bin:/usr/bin:/bin/',
     refreshonly => true,
     subscribe   => Vcsrepo[$th_repo_destination],
-    require     => [ 
+    require     => [
       Class['pip'],
       File['/var/cache/pip'],
     ],
@@ -94,13 +94,11 @@ class turbo_hipster (
     content => template('turbo_hipster/config.json.erb'),
   }
 
-#  file { '/etc/turbo-hipster/init/turbo-hipster':
   file { '/etc/init.d/turbo-hipster':
     ensure  => present,
     mode    => '0755',
     owner   => 'root',
     group   => 'root',
-#    require => File['/etc/turbo-hipster/init'],
     content => template('turbo_hipster/init_turbo-hipster.erb'),
   }
 
@@ -112,45 +110,52 @@ class turbo_hipster (
   }
 
   file { '/var/lib/turbo-hipster':
-    ensure => directory,
-    mode   => '0755',
-    owner  => $th_user,
-    group  => $th_user,
+    ensure  => directory,
+    mode    => '0755',
+    owner   => $th_user,
+    group   => $th_user,
     require => User[$th_user],
   }
 
   file { '/var/lib/turbo-hipster/git':
-    ensure => directory,
-    mode   => '0755',
-    owner  => $th_user,
-    group  => $th_user,
+    ensure  => directory,
+    mode    => '0755',
+    owner   => $th_user,
+    group   => $th_user,
     require => File['/var/lib/turbo-hipster'],
   }
 
   file { '/var/lib/turbo-hipster/jobs':
-    ensure => directory,
-    mode   => '0755',
-    owner  => $th_user,
-    group  => $th_user,
+    ensure  => directory,
+    mode    => '0755',
+    owner   => $th_user,
+    group   => $th_user,
     require => File['/var/lib/turbo-hipster'],
   }
 
   exec { 'install_turbo-hipster':
-    command  => "python setup.py install",
-    cwd      => "$th_repo_destination",
+    command   => "python setup.py install",
+    cwd       => "$th_repo_destination",
     path      => '/usr/local/bin:/usr/bin:/bin/',
-    subscribe   => Vcsrepo[$th_repo_destination],
-    require    => Exec['install_th_dependencies'],
+    subscribe => Vcsrepo[$th_repo_destination],
+    require   => Exec['install_th_dependencies'],
   }
 
   exec { 'start_turbo-hipster':
     command   => '/etc/turbo-hipster/start_turbo-hipster.sh',
     path      => '/usr/local/bin:/usr/bin:/bin/',
-    subscribe   => Vcsrepo[$th_repo_destination],
-    require   => [ 
+    subscribe => Vcsrepo[$th_repo_destination],
+    require   => [
       File['/etc/turbo-hipster/start_turbo-hipster.sh'],
       File['/var/log/turbo-hipster'],
     ],
+  }
+
+  cron { 'Start Turbo-Hipster at boot':
+    command => '/etc/turbo-hipster/start_turbo-hipster.sh',
+    user    => 'root',
+    special => 'reboot',
+    require => File['/etc/turbo-hipster/start_turbo-hipster.sh'], 
   }
 
 }
