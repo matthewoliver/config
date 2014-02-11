@@ -11,6 +11,10 @@ class turbo_hipster (
   $zuul_port = 1234,
   $database_engine = "mysql",
   $pypi_mirror = "http://pypi.python.org",
+  $ssh_private_key = "",
+  $dataset_host = "",
+  $dataset_path = "",
+  $dataset_user = "",
 ) {
 
   include pip
@@ -76,8 +80,8 @@ class turbo_hipster (
   }
 
   file { '/etc/turbo-hipster/start_turbo-hipster.sh':
-    ensure => present,
-    source  => 'puppet:///modules/turbo_hipster/start_turbo-hipster.sh',
+    ensure  => present,
+    content => template('turbo_hipster/start_turbo-hipster.sh.erb'),
     mode    => '0750',
     owner   => 'root',
     group   => 'root',
@@ -141,6 +145,32 @@ class turbo_hipster (
     require   => Exec['install_th_dependencies'],
   }
 
+  file { "/home/${th_user}/.ssh":
+    ensure  => directory,
+    mode    => '0500',
+    owner   => $th_user,
+    group   => $th_user,
+    require => User["$th_user"],
+  }
+
+  file { "/home/${th_user}/.ssh/id_rsa":
+    ensure  => present,
+    content => $ssh_private_key,
+    mode    => '0400',
+    owner   => $th_user,
+    group   => $th_user,
+    require => File["/home/${th_user}/.ssh"],
+  }
+
+  file { "/home/${th_user}/.ssh/config":
+    ensure  => present,
+    source  => 'puppet:///modules/turbo_hipster/ssh.config',
+    mode    => '0440',
+    owner   => $th_user,
+    group   => $th_user,
+    require => File["/home/${th_user}/.ssh"],
+  }
+
   exec { 'start_turbo-hipster':
     command   => '/etc/turbo-hipster/start_turbo-hipster.sh',
     path      => '/usr/local/bin:/usr/bin:/bin/',
@@ -148,14 +178,22 @@ class turbo_hipster (
     require   => [
       File['/etc/turbo-hipster/start_turbo-hipster.sh'],
       File['/var/log/turbo-hipster'],
+      File["/home/${th_user}/.ssh/id_rsa"],
+      File["/var/lib/turbo-hipster"],
     ],
   }
 
-  cron { 'Start Turbo-Hipster at boot':
-    command => '/etc/turbo-hipster/start_turbo-hipster.sh',
-    user    => 'root',
-    special => 'reboot',
-    require => File['/etc/turbo-hipster/start_turbo-hipster.sh'], 
-  }
+#  cron { 'Start Turbo-Hipster at boot':
+#    command => '/etc/turbo-hipster/start_turbo-hipster.sh',
+#    user    => 'root',
+#    special => 'reboot',
+#    require => File['/etc/turbo-hipster/start_turbo-hipster.sh'], 
+#  }
 
+  exec { 'Start Turbo-Hipster at boot (rc.local)':
+    command => "echo /etc/turbo-hipster/start_turbo-hipster.sh >> /etc/rc.local",
+    path    => '/usr/local/bin:/usr/bin:/bin/',
+    onlyif  => '[ $(grep -ic /etc/turbo-hipster/start_turbo-hipster.sh /etc/rc.local) -eq 0 ]',
+    require => File['/etc/turbo-hipster/start_turbo-hipster.sh'],
+  }
 }
