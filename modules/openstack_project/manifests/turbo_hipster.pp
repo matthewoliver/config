@@ -17,8 +17,8 @@ class openstack_project::turbo_hipster (
     "nova_datasets_user_001",
     "nova_dataset_user_002",   
   ],
-  $zuul_server = "1.2.3.4",
-  $zuul_port = 1234,
+  $zuul_server = "",
+  $zuul_port = 4730,
   $database_engine_package = "mysql-server",
   $database_engine = "mysql",
   $mysql_root_password = "master",
@@ -27,6 +27,8 @@ class openstack_project::turbo_hipster (
   $dataset_host =  "",
   $dataset_path = "",
   $dataset_user = "",
+  $rs_cloud_user = "",
+  $rs_cloud_pass = "",
 ) {
   include openstack_project
 
@@ -49,6 +51,8 @@ class openstack_project::turbo_hipster (
     dataset_host             => $dataset_host,
     dataset_path             => $dataset_path,
     dataset_user             => $dataset_user,
+    rs_cloud_user            => $rs_cloud_user,
+    rs_cloud_pass            => $rs_cloud_pass,
   }
 
   class { '::turbo_hipster::db_migration':

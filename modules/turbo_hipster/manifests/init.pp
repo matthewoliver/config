@@ -15,6 +15,8 @@ class turbo_hipster (
   $dataset_host = "",
   $dataset_path = "",
   $dataset_user = "",
+  $rs_cloud_user = "",
+  $rs_cloud_pass = "",
 ) {
 
   include pip
@@ -53,9 +55,9 @@ class turbo_hipster (
     }
   }
 
-  pip_conf {  ['/root/', "/home/$th_user/"]:
-    require => User["$th_user"], 
-  }
+#  pip_conf {  ['/root/', "/home/$th_user/"]:
+#    require => User["$th_user"], 
+#  }
 
   file { '/var/cache/pip':
     ensure => directory,
