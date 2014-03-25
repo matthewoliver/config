@@ -91,13 +91,13 @@ class turbo_hipster (
   }
 
 # This config in the future will need to be split config.json and config.json.d/ so each plugin can contain place each piece of their configuration. 
-  file { '/etc/turbo-hipster/config.json':
+  file { '/etc/turbo-hipster/config.yaml':
     ensure  => present,
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
     require => File['/etc/turbo-hipster'],
-    content => template('turbo_hipster/config.json.erb'),
+    content => template('turbo_hipster/config.yaml.erb'),
   }
 
   file { '/etc/init.d/turbo-hipster':
