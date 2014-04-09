@@ -29,6 +29,8 @@ class openstack_project::turbo_hipster (
   $dataset_user = "",
   $rs_cloud_user = "",
   $rs_cloud_pass = "",
+  $manage_start_script = true,
+  $plugin = "db_migration",
 ) {
   include openstack_project
 
@@ -45,24 +47,27 @@ class openstack_project::turbo_hipster (
     th_user                  => $th_user,
     zuul_server              => $zuul_server,
     zuul_port                => $zuul_port,
-    database_engine          => $database_engine,
     pypi_mirror              => $pypi_mirror,
     ssh_private_key          => $ssh_private_key,
-    dataset_host             => $dataset_host,
-    dataset_path             => $dataset_path,
-    dataset_user             => $dataset_user,
     rs_cloud_user            => $rs_cloud_user,
     rs_cloud_pass            => $rs_cloud_pass,
+    manage_start_script      => $manage_start_script,
   }
 
-  class { '::turbo_hipster::db_migration':
-    th_dataset_path         => $th_dataset_path,
-    th_test_user            => $th_test_user,
-    th_test_pass            => $th_test_pass,
-    th_test_host            => $th_test_host,
-    th_databases            => $th_databases,
-    database_engine         => $database_engine,
-    database_engine_package => $database_engine_package,
-    mysql_root_password     => $mysql_root_password,
+  if ($plugin == "db_migration") { 
+    class { '::turbo_hipster::db_migration':
+      th_dataset_path         => $th_dataset_path,
+      th_test_user            => $th_test_user,
+      th_test_pass            => $th_test_pass,
+      th_test_host            => $th_test_host,
+      th_databases            => $th_databases,
+      database_engine         => $database_engine,
+      database_engine_package => $database_engine_package,
+      mysql_root_password     => $mysql_root_password,
+    }
+  }
+
+  if ($plugin == "cookbooks_ci") {
+    class { '::turbo_hipster::cookbooks_ci': }
   }
 }

@@ -48,12 +48,12 @@ class turbo_hipster::db_migration (
       'bind_address'   => $database_engine_bind,
       'port'           => $database_engine_port,
     },
-    require  => Database_engine_repo['database_repo']
+    require  => Database_engine_repo['database_repo'],
   }
 
   include mysql::python
 
-# first create the TH Test database user. 
+  # first create the TH Test database user. 
   database_user { "${th_test_user}@${th_test_host}":
     ensure        => $ensure,
     password_hash => mysql_password($th_test_pass),
@@ -79,7 +79,24 @@ class turbo_hipster::db_migration (
     }
   }
   th_database { $th_databases: 
-    require =>  Database_user["${th_test_user}@${th_test_host}"]
+    require =>  Database_user["${th_test_user}@${th_test_host}"],
   }
 
+  file { '/etc/turbo-hipster/conf.d/db_migration.yaml':
+    ensure  => present,
+    mode    => '0644',
+    owner   => 'root',
+    group   => 'root',
+    require => File['/etc/turbo-hipster/conf.d'],
+    content => template('turbo_hipster/db_migration.yaml.erb'),
+  }
+
+  file { '/etc/turbo-hipster/start_TH_service.sh':
+    ensure  => present,
+    content => template('turbo_hipster/db_migration_start_TH_service.sh.erb'),
+    mode    => '0750',
+    owner   => 'root',
+    group   => 'root',
+    require => File['/etc/turbo-hipster'],
+  }
 }

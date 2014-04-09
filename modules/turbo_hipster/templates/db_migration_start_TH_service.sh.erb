@@ -38,7 +38,7 @@ sudo su - -c "rsync -a $dataset_user@$dataset_host:$dataset_path /var/lib/turbo-
 chown $th_user:$th_user -R /var/lib/turbo-hipster/
 
 # start up turbo-hipster. 
-if [ $(ps -eaf |grep -ci [t]urbo-hipster) -gt 0 ]
+if [ $(ps -eaf |grep -ci "\/[t]urbo-hipster ") -gt 0 ]
 then
   /etc/init.d/turbo-hipster restart
 else

@@ -9,14 +9,11 @@ class turbo_hipster (
   $th_user = "th",
   $zuul_server = "",
   $zuul_port = 1234,
-  $database_engine = "mysql",
   $pypi_mirror = "http://pypi.python.org",
   $ssh_private_key = "",
-  $dataset_host = "",
-  $dataset_path = "",
-  $dataset_user = "",
   $rs_cloud_user = "",
   $rs_cloud_pass = "",
+  $manage_start_script = true,
 ) {
 
   include pip
@@ -28,6 +25,7 @@ class turbo_hipster (
     gid        => $th_user,
     managehome => true,
     require    => Group[$th_user],
+    notify     => Vcsrepo["$th_repo_destination"],
   }
 
   group { "$th_user":
@@ -39,6 +37,8 @@ class turbo_hipster (
     provider => git,
     revision => $th_repo_branch,
     source   => $th_repo,
+    notify   => Exec['install_th_dependencies'],
+    require  => User["$th_user"],
   }
 
   define pip_conf {
@@ -66,14 +66,22 @@ class turbo_hipster (
     group  => 'root',
   }
 
+  package { 'libmysqlclient-dev':
+    ensure => present,
+  }
+
   exec { 'install_th_dependencies' :
     command     => "pip install $th_repo_destination",
     path        => '/usr/local/bin:/usr/bin:/bin/',
     refreshonly => true,
-    subscribe   => Vcsrepo[$th_repo_destination],
+    notify      => Exec['install_turbo-hipster'],
+    onlyif      => "[ -e $th_repo_destination ]",
+#    subscribe   => Vcsrepo["$th_repo_destination"],
     require     => [
       Class['pip'],
       File['/var/cache/pip'],
+      Vcsrepo["$th_repo_destination"],
+      Package['libmysqlclient-dev'],
     ],
   }
 
@@ -81,13 +89,20 @@ class turbo_hipster (
     ensure => directory,
   }
 
-  file { '/etc/turbo-hipster/start_turbo-hipster.sh':
-    ensure  => present,
-    content => template('turbo_hipster/start_turbo-hipster.sh.erb'),
-    mode    => '0750',
-    owner   => 'root',
-    group   => 'root',
+  file { '/etc/turbo-hipster/conf.d':
+    ensure  => directory,
     require => File['/etc/turbo-hipster'],
+  }
+
+  if ($manage_start_script) {
+    file { '/etc/turbo-hipster/start_TH_service.sh':
+      ensure  => present,
+      content => template('turbo_hipster/start_TH_service.sh.erb'),
+      mode    => '0750',
+      owner   => 'root',
+      group   => 'root',
+      require => File['/etc/turbo-hipster'],
+    }
   }
 
 # This config in the future will need to be split config.json and config.json.d/ so each plugin can contain place each piece of their configuration. 
@@ -143,8 +158,12 @@ class turbo_hipster (
     command   => "python setup.py install",
     cwd       => "$th_repo_destination",
     path      => '/usr/local/bin:/usr/bin:/bin/',
-    subscribe => Vcsrepo[$th_repo_destination],
-    require   => Exec['install_th_dependencies'],
+#    subscribe => Vcsrepo["$th_repo_destination"],
+    require   => [ 
+      Vcsrepo["$th_repo_destination"],
+      Exec['install_th_dependencies'],
+    ],
+    onlyif    => "[ -e $th_repo_destination ]",
   }
 
   file { "/home/${th_user}/.ssh":
@@ -173,17 +192,17 @@ class turbo_hipster (
     require => File["/home/${th_user}/.ssh"],
   }
 
-  exec { 'start_turbo-hipster':
-    command   => '/etc/turbo-hipster/start_turbo-hipster.sh',
-    path      => '/usr/local/bin:/usr/bin:/bin/',
-    subscribe => Vcsrepo[$th_repo_destination],
-    require   => [
-      File['/etc/turbo-hipster/start_turbo-hipster.sh'],
-      File['/var/log/turbo-hipster'],
-      File["/home/${th_user}/.ssh/id_rsa"],
-      File["/var/lib/turbo-hipster"],
-    ],
-  }
+#  exec { 'start_turbo-hipster':
+#    command   => '/etc/turbo-hipster/start_turbo-hipster.sh',
+#    path      => '/usr/local/bin:/usr/bin:/bin/',
+#    subscribe => Vcsrepo[$th_repo_destination],
+#    require   => [
+#      File['/etc/turbo-hipster/start_turbo-hipster.sh'],
+#      File['/var/log/turbo-hipster'],
+#      File["/home/${th_user}/.ssh/id_rsa"],
+#      File["/var/lib/turbo-hipster"],
+#    ],
+#  }
 
 #  cron { 'Start Turbo-Hipster at boot':
 #    command => '/etc/turbo-hipster/start_turbo-hipster.sh',
@@ -193,9 +212,9 @@ class turbo_hipster (
 #  }
 
   exec { 'Start Turbo-Hipster at boot (rc.local)':
-    command => "echo /etc/turbo-hipster/start_turbo-hipster.sh >> /etc/rc.local",
+    command => "echo /etc/turbo-hipster/start_TH_service.sh >> /etc/rc.local",
     path    => '/usr/local/bin:/usr/bin:/bin/',
-    onlyif  => '[ $(grep -ic /etc/turbo-hipster/start_turbo-hipster.sh /etc/rc.local) -eq 0 ]',
-    require => File['/etc/turbo-hipster/start_turbo-hipster.sh'],
+    onlyif  => '[ $(grep -ic /etc/turbo-hipster/start_TH_service.sh /etc/rc.local) -eq 0 ]',
+    require => File['/etc/turbo-hipster/start_TH_service.sh'],
   }
 }
